@@ -1,6 +1,6 @@
-# Optional ArgoCD Application for skypod. Apply this once ArgoCD is in
-# the cluster and it will keep the namespace in sync with the chart in
-# this repo, self-healing included. Not used by the Makefile flow.
+# ArgoCD Application for skypod. Installs the chart from the published
+# Helm repo, keeps it synced with prune and self-heal, and retries a
+# few times on transient sync failures.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -9,14 +9,13 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/SachuJames/skypod.git
-    targetRevision: main
-    path: charts/skypod
+    repoURL: https://sachujames.github.io/skypod/
+    chart: skypod
+    targetRevision: 0.2.0
     helm:
       values: |
-        image:
-          repository: ghcr.io/sachujames/skypod
-          tag: "0.1.0"
+        autoscaling:
+          enabled: true
         serviceMonitor:
           enabled: true
   destination:
@@ -28,3 +27,9 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
