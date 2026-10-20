@@ -3,7 +3,7 @@ RELEASE   := skypod
 IMAGE     := ghcr.io/sachujames/skypod
 TAG       ?= local
 
-.PHONY: tools cluster image deploy monitoring load demo clean
+.PHONY: tools cluster image deploy secure-ns monitoring load demo clean
 
 tools:
 	@go version
@@ -27,6 +27,14 @@ deploy:
 		--namespace $(NAMESPACE) --create-namespace \
 		--set image.repository=$(IMAGE) --set image.tag=$(TAG) \
 		--set serviceMonitor.enabled=true
+
+# Label the app namespace so Pod Security Standards enforce the
+# restricted profile in it. Run once per cluster, after deploy.
+secure-ns:
+	kubectl label namespace $(NAMESPACE) \
+		pod-security.kubernetes.io/enforce=restricted \
+		pod-security.kubernetes.io/audit=restricted \
+		pod-security.kubernetes.io/warn=restricted --overwrite
 
 # Install Prometheus and Grafana next to the app.
 monitoring:

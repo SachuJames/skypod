@@ -1,0 +1,13 @@
+{{- if .Values.namespace.create }}
+# The release namespace, labelled for Pod Security Standards at the
+# restricted level: pods that break the restricted profile are refused,
+# and the audit and warn labels surface the same checks in advance.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+{{- end }}

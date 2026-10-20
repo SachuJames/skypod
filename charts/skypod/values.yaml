@@ -36,6 +36,22 @@ serviceMonitor:
   enabled: false
   interval: 15s
 
+# Network policies: a default-deny policy for the whole release
+# namespace, plus one app policy that opens only what skypod needs:
+# ingress from this namespace and from the monitoring namespace
+# (Prometheus scraping /metrics), and egress to DNS only.
+networkPolicy:
+  enabled: true
+  # Namespace Prometheus lives in. The ingress rule matches namespaces
+  # carrying the standard name label with this value.
+  monitoringNamespace: monitoring
+
+# The chart can render the release Namespace itself, labelled so Pod
+# Security Standards enforce the restricted profile in it. Off by
+# default because most installs go into a namespace that already exists.
+namespace:
+  create: false
+
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65534
