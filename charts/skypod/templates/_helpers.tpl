@@ -1,13 +1,8 @@
-{{/*
-Expand the name of the chart.
-*/}}
 {{- define "skypod.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{/*
-Fully qualified app name.
-*/}}
+{{/* fullname: the release name wins when it already contains the chart name */}}
 {{- define "skypod.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}

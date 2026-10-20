@@ -42,9 +42,8 @@ func handleReadyz(w http.ResponseWriter, r *http.Request) {
 // maxWorkMs caps the CPU burn so /work cannot be abused into a full DoS.
 const maxWorkMs = 2000
 
-// handleWork burns roughly ms milliseconds of CPU and returns how long
-// it took. The load script calls this in a loop to push the pods over
-// the HPA CPU target.
+// handleWork burns roughly ms milliseconds of CPU. The load script
+// hammers it to push the pods over the HPA CPU target.
 func handleWork(w http.ResponseWriter, r *http.Request) {
 	ms := 50
 	if raw := r.URL.Query().Get("ms"); raw != "" {

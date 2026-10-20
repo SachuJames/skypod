@@ -1,7 +1,6 @@
 {{- if .Values.namespace.create }}
-# The release namespace, labelled for Pod Security Standards at the
-# restricted level: pods that break the restricted profile are refused,
-# and the audit and warn labels surface the same checks in advance.
+# Pods breaking the restricted profile are refused here. Audit and
+# warn surface the same failures before they happen.
 apiVersion: v1
 kind: Namespace
 metadata:

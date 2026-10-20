@@ -27,12 +27,15 @@ it exposes its own Prometheus metrics, and it ships as a small static
 binary in a scratch image, with no shell and no userland to speak of.
 The interesting part is the platform around it:
 
-- a **Helm chart** with probes, a hardened security context, an HPA and a
-  PodDisruptionBudget
+- a **Helm chart** with probes, a hardened security context, NetworkPolicy
+  and Pod Security Standards, an HPA and a PodDisruptionBudget
 - **Terraform** that builds the AWS side from nothing: VPC, subnets,
   NAT, IAM, an EKS cluster and a node group in private subnets
 - **Prometheus and Grafana** wiring: a ServiceMonitor for the app, a
-  dashboard for its metrics, and two alerts
+  dashboard for its metrics, an SLO dashboard, recording rules, and
+  alerts including burn-rate ones against a 99.9 percent target
+- **GitOps**: an ArgoCD Application installs the chart from the
+  published Helm repo and keeps the cluster matching it
 - **CI** that vets and tests the Go code, lints and renders the chart,
   checks and validates the Terraform, and builds the image, plus a
   **release workflow** that publishes to GHCR
@@ -64,6 +67,10 @@ curl localhost:8080/
 > `make demo` is the whole show: it creates a three node kind cluster,
 > builds the image, loads it in, and installs the chart with autoscaling on.
 
+The pod security profile is already baked into the chart; if you want the
+namespace itself labelled for the restricted standard, run `make secure-ns`
+once after the deploy.
+
 Now give the HPA something to do:
 
 ```
@@ -85,6 +92,19 @@ helm repo add skypod https://sachujames.github.io/skypod/
 helm repo update
 helm install skypod skypod/skypod
 ```
+
+## 🔄 Deploy with GitOps
+
+If you run ArgoCD, this is a first-class path, not an afterthought: the
+Application in `deploy/argocd/` installs the chart straight from the
+Helm repo above, with automated sync, prune and self-heal. To move to a
+new chart version, bump its targetRevision and apply again.
+
+```
+kubectl apply -f deploy/argocd/application.yaml
+```
+
+The full flow, updating included, is in `deploy/argocd/README.md`.
 
 ## 🌩️ The AWS path
 
@@ -116,8 +136,8 @@ helm upgrade --install skypod charts/skypod --namespace skypod --create-namespac
 | `charts/skypod/` | The Helm chart: Deployment, Service, HPA, PDB, ServiceMonitor and an optional Ingress |
 | `terraform/` | VPC, EKS cluster, managed node group, IAM. Plain resources, no external modules |
 | `deploy/local/` | The kind cluster definition used by the Makefile |
-| `deploy/monitoring/` | kube-prometheus-stack values, a Grafana dashboard, two PrometheusRule alerts |
-| `deploy/argocd/` | An optional ArgoCD Application that syncs this repo onto a cluster |
+| `deploy/monitoring/` | kube-prometheus-stack values, an app dashboard, an SLO dashboard, recording rules and alert rules |
+| `deploy/argocd/` | The GitOps path: an ArgoCD Application installing the chart from the published Helm repo |
 | `.github/workflows/` | CI on every push, and the release publisher |
 
 The app itself:
@@ -151,7 +171,10 @@ GitHub release. The same chart is served from the
 
 The Terraform is checked with `fmt` and `validate` in CI and locally, and
 the chart is linted, rendered and schema-checked, but the EKS stack in
-this repo has not been applied to a live AWS account yet. The kind
+this repo has not been applied to a live AWS account yet. The same goes
+for the NetworkPolicy, the Pod Security labels and the recording rules:
+rendered and schema-checked, not yet run against a live cluster. The
+kind
 quickstart was written and verified at the template level in an
 environment without a Docker daemon, so the full load test loop is
 documented from the mechanism (HPA at 65 percent of the CPU request,

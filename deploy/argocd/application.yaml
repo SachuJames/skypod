@@ -1,6 +1,5 @@
-# ArgoCD Application for skypod. Installs the chart from the published
-# Helm repo, keeps it synced with prune and self-heal, and retries a
-# few times on transient sync failures.
+# Installs the chart from the Helm repo and keeps it synced: prune,
+# self-heal, and a few retries when a sync fails.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

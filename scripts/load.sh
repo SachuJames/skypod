@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Push the app over the HPA CPU target for a couple of minutes.
 # Usage: scripts/load.sh [url] [seconds]
 set -u
 

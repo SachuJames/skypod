@@ -6,11 +6,8 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-# ---------------------------------------------------------------------------
-# Network: a small VPC, public subnets for the load balancer side of things,
-# private subnets for the nodes, one NAT gateway so private nodes can pull
-# images without public addresses.
-# ---------------------------------------------------------------------------
+# VPC: public subnets on the load balancer side, private ones for the
+# nodes, one NAT so the nodes can pull images without public IPs.
 
 resource "aws_vpc" "skypod" {
   cidr_block           = var.vpc_cidr
@@ -112,9 +109,7 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
-# ---------------------------------------------------------------------------
-# IAM: one role for the control plane, one for the nodes.
-# ---------------------------------------------------------------------------
+# IAM roles, one for the control plane and one for the nodes.
 
 resource "aws_iam_role" "cluster" {
   name = "${var.cluster_name}-cluster"
@@ -162,9 +157,7 @@ resource "aws_iam_role_policy_attachment" "nodes_cni" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
-# ---------------------------------------------------------------------------
 # Cluster and node group.
-# ---------------------------------------------------------------------------
 
 resource "aws_eks_cluster" "skypod" {
   name     = var.cluster_name

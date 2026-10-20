@@ -1,5 +1,4 @@
-# Values for kube-prometheus-stack in a small local footprint.
-# Used by: make monitoring
+# kube-prometheus-stack, tuned small for local runs. Used by: make monitoring
 prometheus:
   prometheusSpec:
     retention: 2d

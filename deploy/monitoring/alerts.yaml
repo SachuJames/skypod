@@ -1,6 +1,4 @@
-# PrometheusRule for the skypod app. Requires kube-prometheus-stack
-# (the operator) to pick it up: make monitoring installs it, and this
-# file is applied next to it by the same target.
+# Needs kube-prometheus-stack in the cluster (make monitoring installs it).
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

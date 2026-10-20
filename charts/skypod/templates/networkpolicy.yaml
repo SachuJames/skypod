@@ -1,6 +1,5 @@
 {{- if .Values.networkPolicy.enabled }}
-# Default deny: every pod in the release namespace drops all ingress
-# and egress unless another policy allows the traffic.
+# Nothing talks in or out of this namespace unless a policy allows it.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -14,9 +13,7 @@ spec:
     - Ingress
     - Egress
 ---
-# The app policy: ingress to the app port from pods in this namespace
-# and from the monitoring namespace (Prometheus scraping /metrics).
-# Egress is DNS lookups only, towards CoreDNS in kube-system.
+# Just the app: in from this namespace and the monitoring one, out to DNS only.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

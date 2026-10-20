@@ -36,10 +36,8 @@ serviceMonitor:
   enabled: false
   interval: 15s
 
-# Network policies: a default-deny policy for the whole release
-# namespace, plus one app policy that opens only what skypod needs:
-# ingress from this namespace and from the monitoring namespace
-# (Prometheus scraping /metrics), and egress to DNS only.
+# Default-deny for the namespace, plus an app policy that opens only
+# what skypod needs: same-namespace traffic, Prometheus scraping, DNS out.
 networkPolicy:
   enabled: true
   # Namespace Prometheus lives in. The ingress rule matches namespaces

@@ -1,8 +1,6 @@
-// Package metrics implements a tiny hand-rolled Prometheus metrics
-// registry. It keeps a request counter by route and status, and a
-// duration summary per route, all guarded by a mutex. The whole thing
-// is stdlib only, which keeps the image and the module dependency
-// free on purpose: nothing here needs a client library.
+// Package metrics is a tiny hand-rolled Prometheus registry: a request
+// counter by route and status, and a duration summary per route. Stdlib
+// only on purpose, nothing here needs a client library.
 package main
 
 import (
@@ -18,7 +16,6 @@ type counterKey struct {
 	status string
 }
 
-// routeStats accumulates observations for one route.
 type routeStats struct {
 	count        uint64
 	statusCounts map[string]uint64
@@ -51,7 +48,6 @@ func (r *registry) observe(route string, status int, d time.Duration) {
 	s.totalNanos += uint64(d.Nanoseconds())
 }
 
-// render writes the registry in Prometheus text exposition format.
 func (r *registry) render(sb *strings.Builder) {
 	r.mu.Lock()
 	routes := make([]string, 0, len(r.stats))
