@@ -1,0 +1,34 @@
+# PrometheusRule for the skypod app. Requires kube-prometheus-stack
+# (the operator) to pick it up: make monitoring installs it, and this
+# file is applied next to it by the same target.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: skypod
+  labels:
+    app.kubernetes.io/name: skypod
+    # prometheus-operator only loads rules carrying its release labels.
+    release: monitoring
+spec:
+  groups:
+    - name: skypod.rules
+      rules:
+        - alert: SkypodHighErrorRate
+          expr: |
+            sum(rate(skypod_http_requests_total{status=~"5.."}[5m]))
+              / sum(rate(skypod_http_requests_total[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: skypod error rate above 5 percent
+            description: More than 5 percent of skypod requests returned a 5xx status over the last 5 minutes.
+        - alert: SkypodTooManyRestarts
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace="skypod"}[10m]) > 3
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: skypod pods restarting repeatedly
+            description: A skypod container restarted more than 3 times in 10 minutes.

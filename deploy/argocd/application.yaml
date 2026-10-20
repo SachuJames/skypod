@@ -1,0 +1,30 @@
+# Optional ArgoCD Application for skypod. Apply this once ArgoCD is in
+# the cluster and it will keep the namespace in sync with the chart in
+# this repo, self-healing included. Not used by the Makefile flow.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: skypod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/SachuJames/skypod.git
+    targetRevision: main
+    path: charts/skypod
+    helm:
+      values: |
+        image:
+          repository: ghcr.io/sachujames/skypod
+          tag: "0.1.0"
+        serviceMonitor:
+          enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: skypod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
