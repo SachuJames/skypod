@@ -1,0 +1,16 @@
+apiVersion: v1
+entries:
+  skypod:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-10-20T07:55:21.130963282+05:30"
+    description: The skypod service, deployed with autoscaling and probes
+    digest: e7d3a4e3477f8d7f49460cc2658fd29481aecbd43e52a65650a7ccd6b3067f13
+    maintainers:
+    - name: Sachu James
+    name: skypod
+    type: application
+    urls:
+    - https://sachujames.github.io/skypod/skypod-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-10-20T07:55:21.127529258+05:30"
