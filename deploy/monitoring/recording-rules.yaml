@@ -1,0 +1,39 @@
+# Recording rules for the skypod app. Built from the two series the app
+# exports, skypod_http_requests_total{route,status} and the duration
+# summary skypod_http_request_duration_seconds_{sum,count}{route}.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: skypod-recording
+  labels:
+    app.kubernetes.io/name: skypod
+    # prometheus-operator only loads rules carrying its release labels.
+    release: monitoring
+spec:
+  groups:
+    - name: skypod.recording
+      interval: 30s
+      rules:
+        - record: skypod:request_rate:5m
+          expr: |
+            sum by (route) (rate(skypod_http_requests_total[5m]))
+        # Share of 5xx responses. The burn-rate alerts divide this by the 0.001 budget.
+        - record: skypod:error_ratio:5m
+          expr: |
+            sum(rate(skypod_http_requests_total{status=~"5.."}[5m]))
+              / sum(rate(skypod_http_requests_total[5m]))
+        # Longer windows, used by the slow burn alert.
+        - record: skypod:error_ratio:1h
+          expr: |
+            sum(rate(skypod_http_requests_total{status=~"5.."}[1h]))
+              / sum(rate(skypod_http_requests_total[1h]))
+        - record: skypod:error_ratio:6h
+          expr: |
+            sum(rate(skypod_http_requests_total{status=~"5.."}[6h]))
+              / sum(rate(skypod_http_requests_total[6h]))
+        # The summary has no quantiles, so the mean is the only latency
+        # number the app can honestly give.
+        - record: skypod:latency_mean:5m
+          expr: |
+            sum by (route) (rate(skypod_http_request_duration_seconds_sum[5m]))
+              / sum by (route) (rate(skypod_http_request_duration_seconds_count[5m]))

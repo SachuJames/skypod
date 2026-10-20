@@ -32,3 +32,24 @@ spec:
           annotations:
             summary: skypod pods restarting repeatedly
             description: A skypod container restarted more than 3 times in 10 minutes.
+    # SLO alerts for 99.9 percent availability: error budget is 0.001,
+    # and burn rate is the error ratio divided by that budget (1 means
+    # the budget lasts exactly the month).
+    - name: skypod.slo
+      rules:
+        - alert: SkypodErrorBudgetFastBurn
+          expr: skypod:error_ratio:1h / 0.001 > 14.4
+          for: 5m
+          labels:
+            severity: page
+          annotations:
+            summary: skypod burning its error budget fast
+            description: At the last hour's error rate the monthly error budget would be gone in about two days. Page whoever owns the service.
+        - alert: SkypodErrorBudgetSlowBurn
+          expr: skypod:error_ratio:6h / 0.001 > 6
+          for: 15m
+          labels:
+            severity: ticket
+          annotations:
+            summary: skypod error budget draining steadily
+            description: The 6 hour error rate is more than six times the budget rate. Not a page, but it needs a ticket before the budget does.
