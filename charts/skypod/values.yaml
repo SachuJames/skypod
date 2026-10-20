@@ -1,0 +1,51 @@
+# skypod values. The local kind install overrides the image tag to "local"
+# and keeps everything else as-is; the AWS path only needs the real tag.
+
+image:
+  repository: ghcr.io/sachujames/skypod
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilization: 65
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: false
+  host: ""
+
+# Needs the prometheus-operator CRDs (the monitoring stack installs them).
+serviceMonitor:
+  enabled: false
+  interval: 15s
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  runAsGroup: 65534
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

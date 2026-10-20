@@ -1,0 +1,14 @@
+skypod is installed in namespace {{ .Release.Namespace }}.
+
+Reach it locally with:
+
+  kubectl port-forward svc/{{ include "skypod.fullname" . }} 8080:80
+  curl localhost:8080/
+
+Burn CPU to watch the HPA scale:
+
+  curl "localhost:8080/work?ms=300"
+
+Watch the metrics the service exposes itself:
+
+  curl localhost:8080/metrics
