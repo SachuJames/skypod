@@ -149,6 +149,13 @@ The app itself:
 | `GET /metrics` | Prometheus text, hand-written, no client library |
 | `GET /work?ms=N` | Burns about N ms of CPU (capped at 2000) |
 | `GET /echo` | Reflects method, path and headers back as JSON |
+| `GET /version` | JSON with just the build version |
+
+Shutdown is part of the app, not an afterthought: on SIGTERM the
+readiness probe starts failing so the pod drains out of the endpoints,
+then in-flight requests get up to ten seconds to finish before the
+process exits. Liveness stays up the whole time, so the kubelet does
+not kill the pod mid-drain.
 
 ## 📈 Observability
 

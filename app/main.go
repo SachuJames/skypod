@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -48,6 +51,7 @@ func main() {
 	mux.HandleFunc("/readyz", withMetrics(reg, "/readyz", handleReadyz))
 	mux.HandleFunc("/work", withMetrics(reg, "/work", handleWork))
 	mux.HandleFunc("/echo", withMetrics(reg, "/echo", handleEcho))
+	mux.HandleFunc("/version", withMetrics(reg, "/version", handleVersion))
 	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		var sb strings.Builder
 		reg.render(&sb)
@@ -55,8 +59,27 @@ func main() {
 		_, _ = w.Write([]byte(sb.String()))
 	})
 
+	srv := &http.Server{Addr: *addr, Handler: mux}
+
+	// On SIGTERM, Kubernetes is about to take this pod away. Fail the
+	// readiness probe first so endpoints drain, give that a moment to
+	// land, then let in-flight requests finish before exiting.
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sig
+		ready.Store(false)
+		log.Print("shutdown requested, draining")
+		time.Sleep(2 * time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Printf("shutdown: %v", err)
+		}
+	}()
+
 	log.Printf("skypod %s listening on %s", version, *addr)
-	if err := http.ListenAndServe(*addr, mux); err != nil {
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
 }

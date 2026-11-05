@@ -6,11 +6,18 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync/atomic"
 	"time"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
 var version = "dev"
+
+// ready flips off when shutdown starts, so the readiness probe stops
+// sending this pod new traffic while in-flight requests finish.
+var ready atomic.Bool
+
+func init() { ready.Store(true) }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -35,8 +42,17 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleReadyz(w http.ResponseWriter, r *http.Request) {
+	if !ready.Load() {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = w.Write([]byte("shutting down\n"))
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("ok\n"))
+}
+
+func handleVersion(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"version": version})
 }
 
 // maxWorkMs caps the CPU burn so /work cannot be abused into a full DoS.

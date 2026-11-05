@@ -17,6 +17,7 @@ func newTestServer(t *testing.T) *httptest.Server {
 	mux.HandleFunc("/readyz", withMetrics(reg, "/readyz", handleReadyz))
 	mux.HandleFunc("/work", withMetrics(reg, "/work", handleWork))
 	mux.HandleFunc("/echo", withMetrics(reg, "/echo", handleEcho))
+	mux.HandleFunc("/version", withMetrics(reg, "/version", handleVersion))
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv
@@ -56,6 +57,33 @@ func TestProbes(t *testing.T) {
 		if code != http.StatusOK || !strings.Contains(body, "ok") {
 			t.Errorf("%s: got %d %q", path, code, body)
 		}
+	}
+}
+
+func TestVersion(t *testing.T) {
+	srv := newTestServer(t)
+	code, body := getBody(t, srv.URL+"/version")
+	if code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", code)
+	}
+	if !strings.Contains(body, `"version":"`+version+`"`) {
+		t.Errorf("body missing version: %s", body)
+	}
+}
+
+func TestReadyzFlipsOffWhenDraining(t *testing.T) {
+	srv := newTestServer(t)
+	ready.Store(false)
+	defer ready.Store(true)
+	code, _ := getBody(t, srv.URL+"/readyz")
+	if code != http.StatusServiceUnavailable {
+		t.Fatalf("readyz while draining: status = %d, want 503", code)
+	}
+	// Liveness must stay up while draining, or the kubelet kills the
+	// pod before it can finish.
+	code, _ = getBody(t, srv.URL+"/healthz")
+	if code != http.StatusOK {
+		t.Errorf("healthz while draining: status = %d, want 200", code)
 	}
 }
 
